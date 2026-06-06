@@ -1,0 +1,4 @@
+interface:
+  display_name: "Hedge Fund Healthcare Jobs Monitor"
+  short_description: "Monitor healthcare buy-side research roles"
+  default_prompt: "Use $hedge-fund-healthcare-jobs-monitor to find active buy-side healthcare analyst recruiting posts and generate a PDF report."
