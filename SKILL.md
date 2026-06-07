@@ -1,6 +1,6 @@
 ---
 name: hedge-fund-healthcare-jobs-monitor
-description: Search and report current or recent-month hedge fund, asset-management, family-office, and secondary-market healthcare research analyst recruiting posts across Xiaohongshu, LinkedIn, WeChat public-account articles, and specialist recruiter websites. Use when Codex needs to collect active buy-side healthcare analyst hiring leads, generate a PDF report with clickable source buttons, or respond to the trigger phrase 我要找工作. Prioritize Shanghai, then Singapore, then Hong Kong; focus on keywords such as hedge fund, headge fund, analyst, 资管, 二级, 家办, healthcare, 医药, 研究员, 招聘, healthcare equity, long/short, biotech, biopharma, medtech, Asia healthcare, China healthcare, APM, 上海, 新加坡, and 香港.
+description: Search and report current or recent-month hedge fund, asset-management, family-office, and secondary-market healthcare research analyst recruiting posts across Xiaohongshu, LinkedIn, WeChat public-account articles, and specialist recruiter websites. Use when Codex needs to collect active buy-side healthcare analyst hiring leads, generate a PDF report with clickable source buttons, or respond to the trigger phrase 我要找工作. Prioritize Shanghai, then Singapore, then Hong Kong; exclude internships, VC, PE, and FOF roles; focus on keywords such as hedge fund, headge fund, analyst, 资管, 二级, 家办, healthcare, 医药, 研究员, 招聘, healthcare equity, long/short, biotech, biopharma, medtech, Asia healthcare, China healthcare, APM, 上海, 新加坡, and 香港.
 ---
 
 # Hedge Fund Healthcare Jobs Monitor
@@ -29,17 +29,19 @@ When the user asks for recent-month, last-30-days, 近1个月, or monthly recrui
 3. Force a minimum of 10 results whenever enough relevant public results exist. If fewer than 10 can be verified after location and active-status filtering, explain which channels failed or lacked enough matching posts.
 4. Discard any finding without an original URL. Every PDF/HTML/report item must include a source link copied from the result/detail page, not a generated placeholder.
 5. Proactively delete stopped or expired postings before generating any output. Exclude any item whose listing status, summary, or date note says `Expired`, `Job expired`, `No longer accepting applications`, `Applications closed`, `招聘停止`, `已停止招聘`, `停止投递`, `已停止接受求职申请`, `已停止接受申请`, `不再接受申请`, `职位已关闭`, `已招满`, `已过期`, `暂停招聘`, or `停止招聘`.
-6. For LinkedIn findings, keep only jobs whose visible/listing status is `Actively Hiring`, `Apply visible`, `Apply now`, `正在招聘`, or `招聘中`; exclude closed or stopped application statuses even if the title otherwise matches.
-7. Keep only postings located in Shanghai, Singapore, or Hong Kong. Sort Shanghai/上海 first with highest priority, then Singapore/新加坡, then Hong Kong/香港. Within each location, show healthcare/medical-direction roles before broader buy-side equity roles.
-8. Normalize the payload with `start_date`, `end_date`, `strict_job_filters: true`, `findings`, and `channel_failures`.
-9. Generate the PDF directly into the Downloads folder with:
+6. Proactively delete internships and internship-like postings before output, including posts containing `实习`, `实习生`, `暑期`, `日常实习`, `intern`, `internship`, `summer analyst`, `summer intern`, `project intern`, or `trainee`.
+7. Proactively delete VC, PE, and FOF postings before output, including posts containing `VC`, `PE`, `PEVC`, `private equity`, `venture capital`, `growth equity`, `buyout`, `私募股权`, `股权投资`, `FOF`, `fund of funds`, `母基金`, or `基金中基金`.
+8. For LinkedIn findings, keep only jobs whose visible/listing status is `Actively Hiring`, `Apply visible`, `Apply now`, `正在招聘`, or `招聘中`; exclude closed or stopped application statuses even if the title otherwise matches.
+9. Keep only postings located in Shanghai, Singapore, or Hong Kong. Sort Shanghai/上海 first with highest priority, then Singapore/新加坡, then Hong Kong/香港. Within each location, show healthcare/medical-direction roles before broader buy-side equity roles.
+10. Normalize the payload with `start_date`, `end_date`, `strict_job_filters: true`, `findings`, and `channel_failures`.
+11. Generate the PDF directly into the Downloads folder with:
 
 ```bash
 python3 /Users/lipengfei/.codex/skills/hedge-fund-healthcare-jobs-monitor/scripts/monitor_jobs.py --format-pdf < findings.json
 ```
 
-10. The script prints the generated PDF path. Default output is `~/Downloads/近1个月对冲基金医药研究员招聘监控-YYYY-MM-DD.pdf`.
-11. If PDF generation fails, generate HTML with `--format-html`, save it to `~/Downloads`, and tell the user the PDF dependency failure.
+12. The script prints the generated PDF path. Default output is `~/Downloads/近1个月对冲基金医药研究员招聘监控-YYYY-MM-DD.pdf`.
+13. If PDF generation fails, generate HTML with `--format-html`, save it to `~/Downloads`, and tell the user the PDF dependency failure.
 
 ## Channel Commands
 
@@ -107,6 +109,8 @@ Deduplicate by URL first. If there is no URL, deduplicate by normalized title, c
 For user-requested data collection, `我要找工作`, and one-month reports, return at least 10 findings when enough relevant source pages exist. Never count or report a finding that lacks an original link. PDF output must render each original link as a clickable `打开链接` button rather than printing a long URL.
 
 The helper script enforces this by excluding findings with an empty `url` and proactively deleting stopped-application findings from HTML and PDF output. If fewer than 10 linked active findings remain, the report must include a short explanation of the channel, location, active-status, or login limitation.
+
+The helper script also removes internship, VC, PE, and FOF postings before HTML and PDF output. Do not count these as valid findings even when they otherwise match healthcare, Shanghai, or active-status rules.
 
 ## Helper Script
 

@@ -41,6 +41,46 @@ KNOWN_HEADHUNTER_DOMAINS = [
     "loteandpartners.com",
 ]
 ACTIVE_STATUS_TERMS = ["actively hiring", "正在招聘", "招聘中", "apply visible", "apply now", "open role"]
+EXCLUDED_ROLE_TERMS = [
+    "实习",
+    "实习生",
+    "暑期",
+    "日常实习",
+    "可留用",
+    "留用",
+    "校招实习",
+    "intern",
+    "internship",
+    "summer analyst",
+    "summer intern",
+    "project intern",
+    "trainee",
+    "vc",
+    "venture capital",
+    "venture investor",
+    "venture investment",
+    "风险投资",
+    "创投",
+    "pevc",
+    "pe/vc",
+    "vc/pe",
+    "private equity",
+    "private-equity",
+    "growth equity",
+    "buyout",
+    "私募股权",
+    "股权投资",
+    "fof",
+    "fund of funds",
+    "fund-of-funds",
+    "母基金",
+    "基金中基金",
+]
+EXCLUDED_ROLE_PATTERNS = [
+    re.compile(r"(?<![a-z])vc(?![a-z])", re.IGNORECASE),
+    re.compile(r"(?<![a-z])pe(?![a-z])", re.IGNORECASE),
+    re.compile(r"(?<![a-z])fof(?![a-z])", re.IGNORECASE),
+]
 STOPPED_STATUS_TERMS = [
     "no longer accepting",
     "no longer accepting applications",
@@ -160,12 +200,12 @@ QUERIES = [
     "biotech analyst hedge fund",
     "pharma analyst family office",
     "headge fund healthcare analyst",
-    "我要找工作 healthcare equity analyst hedge fund Shanghai",
-    "我要找工作 healthcare equity analyst hedge fund Singapore",
-    "我要找工作 healthcare equity analyst hedge fund Hong Kong",
-    "我要找工作 医药 研究员 私募 上海",
-    "我要找工作 医药 研究员 资管 香港",
-    "我要找工作 healthcare long short analyst Hong Kong Singapore Shanghai",
+    "我要找工作 healthcare equity analyst hedge fund Shanghai -intern -internship -VC -PE -FOF",
+    "我要找工作 healthcare equity analyst hedge fund Singapore -intern -internship -VC -PE -FOF",
+    "我要找工作 healthcare equity analyst hedge fund Hong Kong -intern -internship -VC -PE -FOF",
+    "我要找工作 医药 研究员 资管 上海 -实习 -实习生 -VC -PE -FOF",
+    "我要找工作 医药 研究员 资管 香港 -实习 -实习生 -VC -PE -FOF",
+    "我要找工作 healthcare long short analyst Hong Kong Singapore Shanghai -intern -internship -VC -PE -FOF",
     "我要找工作 site:selbyjennings.com Shanghai healthcare equity analyst hedge fund",
     "我要找工作 site:hays.com Shanghai healthcare investment analyst",
     "我要找工作 site:michaelpage.com Shanghai healthcare investment analyst",
@@ -264,6 +304,27 @@ def is_stopped_accepting(item: dict[str, Any]) -> bool:
     return any(term in haystack for term in STOPPED_STATUS_TERMS)
 
 
+def is_excluded_role_type(item: dict[str, Any]) -> bool:
+    haystack_raw = " ".join(
+        str(item.get(field) or "")
+        for field in (
+            "title",
+            "publisher",
+            "summary",
+            "keyword_hits",
+            "recruiting_status",
+            "status",
+            "date_note",
+            "detail_status",
+            "raw_status",
+        )
+    )
+    haystack = normalize(haystack_raw)
+    return any(term in haystack for term in EXCLUDED_ROLE_TERMS) or any(
+        pattern.search(haystack_raw) for pattern in EXCLUDED_ROLE_PATTERNS
+    )
+
+
 def has_active_linkedin_status(item: dict[str, Any]) -> bool:
     if "linkedin" not in normalize(item.get("channel")) and "linkedin.com" not in normalize(item.get("url")):
         return True
@@ -275,7 +336,11 @@ def has_active_linkedin_status(item: dict[str, Any]) -> bool:
 
 
 def filter_findings(findings: list[dict[str, Any]], strict_job_filters: bool = False) -> list[dict[str, Any]]:
-    linked = [item for item in dedupe(findings) if not is_stopped_accepting(item)]
+    linked = [
+        item
+        for item in dedupe(findings)
+        if not is_stopped_accepting(item) and not is_excluded_role_type(item)
+    ]
     if not strict_job_filters:
         return sorted(
             linked,
