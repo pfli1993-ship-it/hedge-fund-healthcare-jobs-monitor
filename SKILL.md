@@ -9,7 +9,7 @@ description: Search and report current or recent-month hedge fund, asset-managem
 
 Use this skill to produce a same-day recruiting digest for healthcare research analyst roles at hedge funds, asset managers, family offices, and other secondary-market buy-side platforms.
 
-If the user says `我要找工作`, immediately run the active job-search workflow: collect current recruiting posts, require Shanghai/Singapore/Hong Kong as the job location, treat Shanghai as the highest-priority location, require LinkedIn roles to be `Actively Hiring` / `正在招聘`, and output a PDF with clickable link buttons.
+If the user says `我要找工作`, immediately run the active job-search workflow: collect current recruiting posts, require Shanghai/Singapore/Hong Kong as the job location, treat Shanghai as the highest-priority location, require LinkedIn roles to be `Actively Hiring` / `正在招聘`, prioritize healthcare/medical-direction roles within each location, and output a PDF with clickable link buttons.
 
 1. Build the search plan with `scripts/monitor_jobs.py --queries`.
 2. Check GitHub first for high-star, clearly maintained search/crawler skills or tools that improve the requested channels:
@@ -28,9 +28,9 @@ When the user asks for recent-month, last-30-days, 近1个月, or monthly recrui
 2. Use the same GitHub-first and Agent Reach channel flow as fallback, but keep results from the last 30 calendar days.
 3. Force a minimum of 10 results whenever enough relevant public results exist. If fewer than 10 can be verified after location and active-status filtering, explain which channels failed or lacked enough matching posts.
 4. Discard any finding without an original URL. Every PDF/HTML/report item must include a source link copied from the result/detail page, not a generated placeholder.
-5. Proactively delete stopped postings before generating any output. Exclude any item whose listing status, summary, or date note says `No longer accepting applications`, `Applications closed`, `已停止接受求职申请`, `已停止接受申请`, `不再接受申请`, `职位已关闭`, `已招满`, `暂停招聘`, or `停止招聘`.
+5. Proactively delete stopped or expired postings before generating any output. Exclude any item whose listing status, summary, or date note says `Expired`, `Job expired`, `No longer accepting applications`, `Applications closed`, `招聘停止`, `已停止招聘`, `停止投递`, `已停止接受求职申请`, `已停止接受申请`, `不再接受申请`, `职位已关闭`, `已招满`, `已过期`, `暂停招聘`, or `停止招聘`.
 6. For LinkedIn findings, keep only jobs whose visible/listing status is `Actively Hiring`, `Apply visible`, `Apply now`, `正在招聘`, or `招聘中`; exclude closed or stopped application statuses even if the title otherwise matches.
-7. Keep only postings located in Shanghai, Singapore, or Hong Kong. Sort Shanghai/上海 first with highest priority, then Singapore/新加坡, then Hong Kong/香港.
+7. Keep only postings located in Shanghai, Singapore, or Hong Kong. Sort Shanghai/上海 first with highest priority, then Singapore/新加坡, then Hong Kong/香港. Within each location, show healthcare/medical-direction roles before broader buy-side equity roles.
 8. Normalize the payload with `start_date`, `end_date`, `strict_job_filters: true`, `findings`, and `channel_failures`.
 9. Generate the PDF directly into the Downloads folder with:
 

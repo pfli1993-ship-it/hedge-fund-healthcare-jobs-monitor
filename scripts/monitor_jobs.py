@@ -51,20 +51,57 @@ STOPPED_STATUS_TERMS = [
     "position filled",
     "role filled",
     "expired",
+    "job expired",
+    "posting expired",
     "closed",
+    "recruitment stopped",
+    "hiring stopped",
+    "not hiring",
     "已停止接受求职申请",
     "已停止接受申请",
     "停止接受求职申请",
     "停止接受申请",
+    "停止投递",
+    "停止接收",
     "不再接受申请",
     "不再接受求职申请",
     "职位已关闭",
     "岗位已关闭",
     "招聘已关闭",
+    "招聘停止",
+    "已停止招聘",
     "已关闭",
     "已招满",
+    "已过期",
+    "职位过期",
+    "岗位过期",
     "暂停招聘",
     "停止招聘",
+]
+HEALTHCARE_PRIORITY_TERMS = [
+    "healthcare",
+    "health care",
+    "healthcare equity",
+    "healthcare l/s",
+    "healthcare long short",
+    "pharma",
+    "biotech",
+    "biopharma",
+    "medtech",
+    "life sciences",
+    "medical devices",
+    "ivd",
+    "asia healthcare",
+    "china healthcare",
+    "医药",
+    "医疗",
+    "生物医药",
+    "创新药",
+    "药企",
+    "医疗器械",
+    "港股医药",
+    "a股医药",
+    "美股医药",
 ]
 CORE_TERMS = [
     "hedge fund",
@@ -193,6 +230,23 @@ def source_rank(item: dict[str, Any]) -> int:
     return 2
 
 
+def healthcare_rank(item: dict[str, Any]) -> int:
+    haystack = normalize(
+        " ".join(
+            str(item.get(field) or "")
+            for field in (
+                "title",
+                "publisher",
+                "summary",
+                "keyword_hits",
+                "recruiting_status",
+                "date_note",
+            )
+        )
+    )
+    return 0 if any(term in haystack for term in HEALTHCARE_PRIORITY_TERMS) else 1
+
+
 def is_stopped_accepting(item: dict[str, Any]) -> bool:
     haystack = normalize(
         " ".join(
@@ -223,9 +277,25 @@ def has_active_linkedin_status(item: dict[str, Any]) -> bool:
 def filter_findings(findings: list[dict[str, Any]], strict_job_filters: bool = False) -> list[dict[str, Any]]:
     linked = [item for item in dedupe(findings) if not is_stopped_accepting(item)]
     if not strict_job_filters:
-        return sorted(linked, key=lambda item: (location_rank(item), source_rank(item), normalize(item.get("title"))))
+        return sorted(
+            linked,
+            key=lambda item: (
+                location_rank(item),
+                healthcare_rank(item),
+                source_rank(item),
+                normalize(item.get("title")),
+            ),
+        )
     active = [item for item in linked if has_allowed_location(item) and has_active_linkedin_status(item)]
-    return sorted(active, key=lambda item: (location_rank(item), source_rank(item), normalize(item.get("title"))))
+    return sorted(
+        active,
+        key=lambda item: (
+            location_rank(item),
+            healthcare_rank(item),
+            source_rank(item),
+            normalize(item.get("title")),
+        ),
+    )
 
 
 def minimum_result_note(count: int) -> str:
